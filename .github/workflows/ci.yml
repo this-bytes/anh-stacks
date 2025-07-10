@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Validate TOML
+      run: |
+        pip install toml
+        python -c 'import toml,glob; [toml.load(open(f)) for f in glob.glob("komodo/**/*.toml", recursive=True)]'
+    - name: Lint shell scripts
+      run: |
+        sudo apt-get update && sudo apt-get install -y shellcheck
+        shellcheck scripts/*.sh
+    - name: Decrypt secrets (test)
+      env:
+        AGE_KEY: ${{ secrets.AGE_KEY }}
+      run: |
+        pip install sops
+        sops --decrypt --age "$AGE_KEY" secrets/secrets.enc.yaml > /dev/null

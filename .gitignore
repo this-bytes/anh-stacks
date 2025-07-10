@@ -1,0 +1,9 @@
+# Ignore unencrypted secrets and env files
+stacks/*/*.secret.yaml
+stacks/*/*.env
+shared/*.secret.yaml
+shared/*.env
+!stacks/**/*.sops.yaml
+!stacks/**/*.sop.env
+!shared/*.sops.yaml
+!shared/*.sop.env

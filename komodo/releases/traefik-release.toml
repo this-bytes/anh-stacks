@@ -1,0 +1,5 @@
+# Traefik release definition for Komodo (TOML)
+name = "traefik-release"
+namespace = "traefik"
+stacks = ["traefik"]
+version = "1.0.0"

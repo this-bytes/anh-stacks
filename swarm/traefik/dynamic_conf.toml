@@ -1,0 +1,9 @@
+# Example dynamic configuration for Traefik
+[http.routers]
+  [http.routers.api]
+    rule = "Host(`traefik.localhost`)"
+    service = "api@internal"
+    entrypoints = ["web"]
+
+[http.services]
+# Define your services here

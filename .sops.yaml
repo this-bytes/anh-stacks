@@ -1,0 +1,9 @@
+creation_rules:
+- path_regex: .*\.secret\.yaml$
+  key_groups:
+  - age:
+    - age1cg79xp9uppp72nnady2gpn3jff3yrplelsg00plf3uy2pjvyz5ds3ntnzr
+- path_regex: .*\.env$
+  key_groups:
+  - age:
+    - age1cg79xp9uppp72nnady2gpn3jff3yrplelsg00plf3uy2pjvyz5ds3ntnzr

@@ -1,0 +1,15 @@
+# Traefik stack definition for Komodo (TOML)
+name = "traefik"
+namespace = "traefik"
+compose_file = "../../swarm/traefik/docker-compose.yml"
+
+[secrets]
+  files = [
+    "../../secrets/traefik/traefik.secret.sops.yaml",
+    "../../secrets/shared/acme.secret.sops.yaml"
+  ]
+[env]
+  files = [
+    "../../secrets/traefik/traefik.sop.env",
+    "../../secrets/shared/acme.sop.env"
+  ]

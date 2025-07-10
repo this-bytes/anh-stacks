@@ -1,0 +1,8 @@
+[release]
+name = "app-release"
+stack = "app-stack"
+version = "1.0.0"
+description = "Release for app-stack"
+
+[parameters]
+web_image = "nginx:alpine"

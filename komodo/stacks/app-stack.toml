@@ -1,0 +1,20 @@
+[stack]
+name = "app-stack"
+description = "Example application stack for Komodo with Docker Swarm."
+
+[services.web]
+image = "nginx:alpine"
+replicas = 2
+environment = ["ENV=production"]
+networks = ["frontend"]
+configs = ["nginx-config"]
+secrets = ["app-secret"]
+
+[networks.frontend]
+driver = "overlay"
+
+[configs.nginx-config]
+file = "./swarm/nginx.conf"
+
+[secrets.app-secret]
+external = true
