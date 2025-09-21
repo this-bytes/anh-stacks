@@ -1,0 +1,43 @@
+ansible_user: localadmin
+
+docker_package_state: present
+docker_users: []
+
+swarm_advertise_iface: eth0
+swarm_networks:
+- name: traefik-public
+  driver: overlay
+  attachable: true
+
+nfs_enabled: true
+nfs_server: "{{ hostvars[groups['managers'][0]]['ansible_host'] }}"
+nfs_exports:
+  - path: /srv/nfs/traefik
+    clients: "{{ ansible_default_ipv4.network }}/{{ ansible_default_ipv4.netmask }}(rw,sync,no_subtree_check,no_root_squash)"
+  - path: /srv/nfs/komodo
+    clients: "{{ ansible_default_ipv4.network }}/{{ ansible_default_ipv4.netmask }}(rw,sync,no_subtree_check,no_root_squash)"
+  - path: /srv/nfs/shared
+    clients: "{{ ansible_default_ipv4.network }}/{{ ansible_default_ipv4.netmask }}(rw,sync,no_subtree_check,no_root_squash)"
+  - path: /srv/nfs/stacks
+    clients: "{{ ansible_default_ipv4.network }}/{{ ansible_default_ipv4.netmask }}(rw,sync,no_subtree_check,no_root_squash)"
+
+nfs_mounts:
+  - src: "{{ nfs_server }}:/srv/nfs/traefik"
+    path: /mnt/traefik
+    opts: defaults,_netdev
+  - src: "{{ nfs_server }}:/srv/nfs/komodo"
+    path: /mnt/komodo
+    opts: defaults,_netdev
+  - src: "{{ nfs_server }}:/srv/nfs/shared"
+    path: /mnt/shared
+    opts: defaults,_netdev
+  - src: "{{ nfs_server }}:/srv/nfs/stacks"
+    path: /mnt/stacks
+    opts: defaults,_netdev
+
+# Komodo configuration
+komodo_enabled: true
+komodo_version: "latest"
+komodo_data_path: /mnt/komodo
+komodo_repo_url: "https://github.com/this-bytes/anh-stacks.git"
+komodo_repo_branch: "main"

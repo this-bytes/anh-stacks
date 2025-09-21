@@ -1,0 +1,26 @@
+# File rules to guide AI modifications and context selection
+# Keep scope minimal and protect sensitive patterns
+
+allow:
+- "README.md"
+- "docs/**"
+- "Makefile"
+- "scripts/**"
+- "komodo/**"
+- "stacks/**"
+- "swarm/**"
+- ".github/**"
+- ".sops.yaml"
+
+ignore:
+- "**/*.secret.yaml" # plaintext secrets (should not exist in git)
+- "**/*.env" # plaintext env files (should not exist in git)
+- "**/age.key" # local age key
+- "**/*.log"
+- "**/.env" # developer convenience env
+
+constraints:
+- "Do not commit plaintext secrets. Only *.secret.sops.yaml and *.sop.env may exist."
+- "Respect .gitignore and .sops.yaml creation rules."
+- "Prefer minimal diffs; avoid reformatting unrelated files."
+- "Document significant changes in docs/ and README.md."

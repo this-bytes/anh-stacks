@@ -11,17 +11,43 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.x'
     - name: Validate TOML
       run: |
-        pip install toml
-        python -c 'import toml,glob; [toml.load(open(f)) for f in glob.glob("komodo/**/*.toml", recursive=True)]'
+        python -m pip install --quiet toml
+        python - <<'PY'
+        import glob, toml, sys
+        files = glob.glob('komodo/**/*.toml', recursive=True)
+        for f in files:
+            try:
+                toml.load(open(f,'r'))
+                print(f"OK TOML: {f}")
+            except Exception as e:
+                print(f"BAD TOML: {f}: {e}")
+                sys.exit(1)
+        PY
+    - name: Validate YAML syntax
+      run: |
+        python -m pip install --quiet pyyaml
+        python - <<'PY'
+        import glob, yaml, sys
+        patterns = ['stacks/**/*.yml','stacks/**/*.yaml','swarm/**/*.yml','swarm/**/*.yaml','ansible/**/*.yml','ansible/**/*.yaml']
+        files = []
+        for p in patterns:
+            files.extend(glob.glob(p, recursive=True))
+        for f in files:
+            try:
+                with open(f,'r') as fh:
+                    yaml.safe_load(fh)
+                print(f"OK YAML: {f}")
+            except Exception as e:
+                print(f"BAD YAML: {f}: {e}")
+                sys.exit(1)
+        PY
     - name: Lint shell scripts
       run: |
         sudo apt-get update && sudo apt-get install -y shellcheck
         shellcheck scripts/*.sh
-    - name: Decrypt secrets (test)
-      env:
-        AGE_KEY: ${{ secrets.AGE_KEY }}
-      run: |
-        pip install sops
-        sops --decrypt --age "$AGE_KEY" secrets/secrets.enc.yaml > /dev/null

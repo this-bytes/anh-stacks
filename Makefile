@@ -1,6 +1,9 @@
 SHELL := /bin/bash
 
-.PHONY: validate lint decrypt-secrets install-tools age-key encrypt-secrets
+ANSIBLE_DIR := ansible
+INVENTORY := $(ANSIBLE_DIR)/inventories/homelab/hosts.yml
+
+.PHONY: validate lint decrypt-secrets install-tools age-key encrypt-secrets site storage storage-check storage-host storage-check-host ping cleanup-seaweedfs cleanup-seaweedfs-host bootstrap bootstrap-cluster-only bootstrap-secrets-only validate-config
 
 validate:
 	python3 -m pip install --quiet toml
@@ -75,3 +78,55 @@ decrypt-secrets:
 		echo "Usage: make decrypt-secrets TARGET=stackname|shared"; exit 1; \
 	fi; \
 	./scripts/decrypt-secrets.sh $$TARGET
+
+# Ansible convenience targets (no -Kk; relies on SSH key auth)
+site:
+	cd $(ANSIBLE_DIR) && ansible-playbook site.yml
+
+storage:
+	cd $(ANSIBLE_DIR) && ansible-playbook storage.yml
+
+storage-check:
+	# Check NFS mounts across managers
+	cd $(ANSIBLE_DIR) && ansible managers -b -m shell -a 'mount | grep -E " nfs | type nfs|:/srv/nfs/" || true'
+
+storage-host:
+	@HOST=$${HOST}; \
+	if [ -z "$$HOST" ]; then echo "Usage: make storage-host HOST=<inventory-name|ip>"; exit 1; fi; \
+	cd $(ANSIBLE_DIR) && ansible-playbook storage.yml -l $$HOST
+
+storage-check-host:
+	@HOST=$${HOST}; \
+	if [ -z "$$HOST" ]; then echo "Usage: make storage-check-host HOST=<inventory-name|ip>"; exit 1; fi; \
+	# Check NFS mounts on a single host
+	cd $(ANSIBLE_DIR) && ansible $$HOST -b -m shell -a 'mount | grep -E " nfs | type nfs|:/srv/nfs/" || true'
+
+cleanup-seaweedfs:
+	# Ad-hoc cleanup of SeaweedFS services, mounts, binaries, and data on all managers
+	cd $(ANSIBLE_DIR) && ansible-playbook cleanup-seaweedfs.yml
+
+cleanup-seaweedfs-host:
+	@HOST=$${HOST}; \
+	if [ -z "$$HOST" ]; then echo "Usage: make cleanup-seaweedfs-host HOST=<inventory-name|ip>"; exit 1; fi; \
+	cd $(ANSIBLE_DIR) && ansible-playbook cleanup-seaweedfs.yml -l $$HOST
+
+ping:
+	@HOST=$${HOST:-managers}; \
+	cd $(ANSIBLE_DIR) && ansible $$HOST -m ping
+
+# Bootstrap targets for complete swarm setup
+bootstrap:
+	@echo "Bootstrapping Docker Swarm cluster with NFS and secrets..."
+	./scripts/bootstrap-swarm.sh --all
+
+bootstrap-cluster-only:
+	@echo "Bootstrapping Docker Swarm cluster only..."
+	./scripts/bootstrap-swarm.sh
+
+bootstrap-secrets-only:
+	@echo "Setting up secrets only..."
+	./scripts/bootstrap-swarm.sh --generate-key --encrypt-secrets
+
+validate-config:
+	@echo "Validating configuration and setup..."
+	./scripts/validate-config.sh

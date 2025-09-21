@@ -1,0 +1,44 @@
+---
+- name: Determine advertise address
+  set_fact:
+    swarm_advertise_addr: "{{ hostvars[inventory_hostname]['ansible_' + swarm_advertise_iface].ipv4.address | default(ansible_default_ipv4.address) }}"
+
+- name: Check if node is already part of a swarm
+  command: docker info --format '{{"{{.Swarm.LocalNodeState}}"}}'
+  register: swarm_state
+  changed_when: false
+  failed_when: false
+
+- name: Initialize swarm on first manager
+  command: "docker swarm init --advertise-addr {{ swarm_advertise_addr }}"
+  when: swarm_state.stdout != 'active' and inventory_hostname == groups['managers'][0]
+  register: swarm_init
+  changed_when: swarm_init.rc == 0
+
+- name: Get manager join-token (on leader)
+  command: docker swarm join-token -q manager
+  register: join_token
+  when: inventory_hostname == groups['managers'][0]
+  changed_when: false
+
+- name: Set join facts
+  set_fact:
+    swarm_join_token: "{{ hostvars[groups['managers'][0]].join_token.stdout | default(omit) }}"
+    swarm_leader_ip: "{{ hostvars[groups['managers'][0]].swarm_advertise_addr | default(omit) }}"
+
+- name: Join swarm as manager (others)
+  command: "docker swarm join --token {{ swarm_join_token }} {{ swarm_leader_ip }}:2377"
+  when: swarm_state.stdout != 'active' and inventory_hostname != groups['managers'][0]
+  register: swarm_join
+  changed_when: swarm_join.rc == 0
+
+- name: Create overlay networks
+  command: >-
+    docker network create -d {{ item.driver | default('overlay') }}
+    {% if item.attachable | default(false) %}--attachable{% endif %}
+    {{ item.name }}
+  loop: "{{ swarm_networks | default([]) }}"
+  when: inventory_hostname == groups['managers'][0]
+  register: net_create
+  changed_when: "'created' in (net_create.stdout | default('')) or net_create.rc == 0"
+  failed_when: net_create.rc not in [0,1]
