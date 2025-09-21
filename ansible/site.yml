@@ -68,3 +68,12 @@
   roles:
     - docker
     - swarm
+
+- name: Configure shared storage for swarm
+  hosts: managers
+  become: true
+  roles:
+    - role: nfs_server
+      when: nfs_enabled | bool and inventory_hostname == groups['managers'][0]
+    - role: nfs_client
+      when: nfs_enabled | bool

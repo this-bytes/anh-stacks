@@ -1,0 +1,14 @@
+# Komodo stack definition for self-hosting Komodo GitOps engine
+name = "komodo"
+namespace = "komodo"
+compose_file = "../../stacks/komodo/docker-compose.yml"
+
+[secrets]
+  files = [
+    "../../shared/komodo.secret.sops.yaml"
+  ]
+
+[env]
+  files = [
+    "../../shared/komodo.sop.env"
+  ]

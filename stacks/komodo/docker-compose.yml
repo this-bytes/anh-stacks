@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  komodo:
+    image: kthcloud/komodo:latest
+    networks:
+      - traefik-public
+    volumes:
+      - komodo-data:/app/data
+      - komodo-repos:/app/repos
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - KOMODO_LOG_LEVEL=info
+      - KOMODO_HOST=0.0.0.0
+      - KOMODO_PORT=8080
+      - KOMODO_REPO_URL=${KOMODO_REPO_URL}
+      - KOMODO_REPO_BRANCH=${KOMODO_REPO_BRANCH}
+      - KOMODO_STACK_PATH=stacks
+      - KOMODO_SECRETS_PATH=shared
+      - SOPS_AGE_KEY=${SOPS_AGE_KEY}
+    secrets:
+      - source: komodo-age-key
+        target: /app/.age-key
+        uid: '1000'
+        gid: '1000'
+        mode: 0600
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      labels:
+        - traefik.enable=true
+        - traefik.docker.network=traefik-public
+        - traefik.http.routers.komodo.rule=Host(`komodo.${DOMAIN:-localhost}`)
+        - traefik.http.routers.komodo.tls=true
+        - traefik.http.routers.komodo.tls.certresolver=letsencrypt
+        - traefik.http.services.komodo.loadbalancer.server.port=8080
+
+volumes:
+  komodo-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/komodo/data
+  komodo-repos:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/komodo/repos
+
+networks:
+  traefik-public:
+    external: true
+
+secrets:
+  komodo-age-key:
+    external: true

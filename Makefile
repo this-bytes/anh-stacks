@@ -3,7 +3,7 @@ SHELL := /bin/bash
 ANSIBLE_DIR := ansible
 INVENTORY := $(ANSIBLE_DIR)/inventories/homelab/hosts.yml
 
-.PHONY: validate lint decrypt-secrets install-tools age-key encrypt-secrets site storage storage-check storage-host storage-check-host ping cleanup-seaweedfs cleanup-seaweedfs-host
+.PHONY: validate lint decrypt-secrets install-tools age-key encrypt-secrets site storage storage-check storage-host storage-check-host ping cleanup-seaweedfs cleanup-seaweedfs-host bootstrap bootstrap-cluster-only bootstrap-secrets-only
 
 validate:
 	python3 -m pip install --quiet toml
@@ -113,3 +113,16 @@ cleanup-seaweedfs-host:
 ping:
 	@HOST=$${HOST:-managers}; \
 	cd $(ANSIBLE_DIR) && ansible $$HOST -m ping
+
+# Bootstrap targets for complete swarm setup
+bootstrap:
+	@echo "Bootstrapping Docker Swarm cluster with NFS and secrets..."
+	./scripts/bootstrap-swarm.sh --all
+
+bootstrap-cluster-only:
+	@echo "Bootstrapping Docker Swarm cluster only..."
+	./scripts/bootstrap-swarm.sh
+
+bootstrap-secrets-only:
+	@echo "Setting up secrets only..."
+	./scripts/bootstrap-swarm.sh --generate-key --encrypt-secrets
