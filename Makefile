@@ -3,7 +3,7 @@ SHELL := /bin/bash
 ANSIBLE_DIR := ansible
 INVENTORY := $(ANSIBLE_DIR)/inventories/homelab/hosts.yml
 
-.PHONY: validate lint decrypt-secrets install-tools age-key encrypt-secrets site storage storage-check storage-host storage-check-host ping cleanup-seaweedfs cleanup-seaweedfs-host bootstrap bootstrap-cluster-only bootstrap-secrets-only validate-config
+.PHONY: validate lint decrypt-secrets install-tools age-key encrypt-secrets site storage storage-check storage-host storage-check-host ping cleanup-seaweedfs cleanup-seaweedfs-host bootstrap bootstrap-cluster-only bootstrap-secrets-only validate-config validate-eth1-nfs
 
 validate:
 	python3 -m pip install --quiet toml
@@ -130,3 +130,7 @@ bootstrap-secrets-only:
 validate-config:
 	@echo "Validating configuration and setup..."
 	./scripts/validate-config.sh
+
+validate-eth1-nfs:
+	@echo "Validating eth1 interface configuration for NFS..."
+	./scripts/validate-eth1-nfs.sh

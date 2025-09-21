@@ -97,12 +97,15 @@ The default NFS setup creates these shared mount points:
 - `/mnt/shared` - Shared application data
 - `/mnt/stacks` - Stack-specific persistent volumes
 
+**Important**: NFS is configured to use the **eth1** interface for external NFS server access. Ensure your servers have the eth1 interface properly configured for the NFS network.
+
 Customize in `ansible/inventories/homelab/group_vars/managers.yml`:
 
 ```yaml
+nfs_interface: eth1  # Network interface for NFS access
 nfs_exports:
   - path: /srv/nfs/custom-app
-    clients: "{{ ansible_default_ipv4.network }}/{{ ansible_default_ipv4.netmask }}(rw,sync,no_subtree_check,no_root_squash)"
+    clients: "{{ hostvars[inventory_hostname]['ansible_' + nfs_interface].ipv4.network | default(ansible_default_ipv4.network) }}/{{ hostvars[inventory_hostname]['ansible_' + nfs_interface].ipv4.netmask | default(ansible_default_ipv4.netmask) }}(rw,sync,no_subtree_check,no_root_squash)"
 
 nfs_mounts:
   - src: "{{ nfs_server }}:/srv/nfs/custom-app"

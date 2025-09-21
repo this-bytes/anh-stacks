@@ -2,12 +2,15 @@
 
 This repo now uses NFS for shared storage. You can enable an NFS server on the first manager and mount it on all managers using the provided Ansible roles.
 
+**Important**: NFS storage is configured to use the **eth1** interface for external NFS server access. Ensure your servers have an eth1 interface configured for the NFS network.
+
 ## Enable NFS
 
 1. In `ansible/inventories/homelab/group_vars/managers.yml`, set/update:
 
 ```yaml
 nfs_enabled: true
+nfs_interface: eth1  # Network interface for NFS access (external server)
 nfs_server: <ip-of-nfs-server>  # by default, first manager
 nfs_exports:
   - path: /srv/nfs/traefik
@@ -28,6 +31,19 @@ ansible-playbook -i ansible/inventories/homelab/hosts.yml ansible/storage.yml
 
 ```zsh
 ansible -i ansible/inventories/homelab/hosts.yml managers -b -m shell -a 'mount | grep -E " nfs |:/srv/nfs/" || true'
+```
+
+4. Validate eth1 interface configuration:
+
+```bash
+# Check eth1 interface setup locally
+make validate-eth1-nfs
+
+# Or run directly
+./scripts/validate-eth1-nfs.sh
+
+# Test with specific NFS server
+NFS_SERVER=10.87.10.101 ./scripts/validate-eth1-nfs.sh
 ```
 
 ## Use in Swarm stacks
