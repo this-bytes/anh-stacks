@@ -1,0 +1,32 @@
+---
+- name: Install NFS server packages
+  package:
+    name: nfs-kernel-server
+    state: present
+
+- name: Ensure export paths exist
+  file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  loop: "{{ nfs_exports | default([]) }}"
+
+- name: Configure /etc/exports
+  blockinfile:
+    path: /etc/exports
+    marker: "# {mark} ANSIBLE MANAGED NFS EXPORTS"
+    block: |
+      {% for exp in nfs_exports %}
+      {{ exp.path }} {{ exp.clients }}
+      {% endfor %}
+
+- name: Reload exports
+  command: exportfs -ra
+
+- name: Enable and start NFS server
+  service:
+    name: nfs-kernel-server
+    state: started
+    enabled: true

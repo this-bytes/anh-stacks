@@ -1,0 +1,10 @@
+---
+- name: Configure shared storage (optional)
+  hosts: managers
+  become: true
+  roles:
+  - role: nfs_server
+    when: nfs_enabled | bool and inventory_hostname == groups['managers'][0]
+  - role: nfs_client
+    when: nfs_enabled | bool
+  # SeaweedFS removed; using NFS only

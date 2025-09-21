@@ -1,0 +1,68 @@
+---
+- name: Cleanup SeaweedFS from nodes
+  hosts: managers
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Stop SeaweedFS services if present
+      ansible.builtin.service:
+        name: "{{ item }}"
+        state: stopped
+        enabled: false
+      loop:
+        - weed-mount
+        - weed-filer
+        - weed-volume
+        - weed-master
+      ignore_errors: true
+
+    - name: Unmount SeaweedFS mount (/mnt/shared) if present
+      ansible.builtin.command: umount -f /mnt/shared
+      register: umount_shared
+      failed_when: false
+      changed_when: "umount_shared.rc == 0"
+
+    - name: Unmount SeaweedFS mount (/mnt/seaweed) if present
+      ansible.builtin.command: umount -f /mnt/seaweed
+      register: umount_seaweed
+      failed_when: false
+      changed_when: "umount_seaweed.rc == 0"
+
+    - name: Remove systemd unit files if present
+      ansible.builtin.file:
+        path: "/etc/systemd/system/{{ item }}.service"
+        state: absent
+      loop:
+        - weed-mount
+        - weed-filer
+        - weed-volume
+        - weed-master
+
+    - name: Reload systemd daemon
+      ansible.builtin.systemd:
+        daemon_reload: true
+
+    - name: Remove SeaweedFS binary symlink if present
+      ansible.builtin.file:
+        path: /usr/local/bin/weed
+        state: absent
+
+    - name: Remove SeaweedFS installation dir
+      ansible.builtin.file:
+        path: /opt/seaweedfs
+        state: absent
+
+    - name: Remove SeaweedFS data directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /var/lib/seaweed/master
+        - /var/lib/seaweed/volume
+        - /var/lib/seaweed/filer
+
+    - name: Ensure mountpoint directory exists (optional cleanup)
+      ansible.builtin.file:
+        path: /mnt/shared
+        state: absent
+        force: true

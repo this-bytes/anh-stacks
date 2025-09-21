@@ -1,0 +1,22 @@
+ansible_user: localadmin
+
+docker_package_state: present
+docker_users: []
+
+swarm_advertise_iface: eth0
+swarm_networks:
+- name: traefik-public
+  driver: overlay
+  attachable: true
+
+nfs_enabled: true
+nfs_server: 192.168.1.10
+nfs_exports:
+- path: /srv/nfs/traefik
+  clients: 192.168.1.0/24(rw,sync,no_subtree_check,no_root_squash)
+nfs_mounts:
+- src: "{{ nfs_server }}:/srv/nfs/traefik"
+  path: /mnt/traefik
+  opts: defaults,_netdev
+
+# SeaweedFS removed; use NFS mounts above

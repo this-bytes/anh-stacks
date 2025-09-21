@@ -1,0 +1,70 @@
+---
+- name: SSH bootstrap (controller -> managers)
+  hosts: managers
+  gather_facts: false
+  become: true
+  vars:
+    controller_key_path: "~/.ssh/id_ed25519"
+    remote_ssh_user: "{{ ansible_user | default('localadmin') }}"
+  tasks:
+    - name: Ensure controller SSH key exists (ed25519)
+      ansible.builtin.openssh_keypair:
+        state: present
+        type: ed25519
+        path: "{{ controller_key_path }}"
+      delegate_to: localhost
+      become: false
+
+    - name: Install controller pubkey into remote authorized_keys
+      ansible.builtin.authorized_key:
+        user: "{{ remote_ssh_user }}"
+        state: present
+        key: "{{ lookup('file', controller_key_path + '.pub') }}"
+        manage_dir: yes
+
+    - name: Ensure PubkeyAuthentication enabled
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PubkeyAuthentication'
+        line: 'PubkeyAuthentication yes'
+        create: yes
+
+    - name: Optionally disable password auth (set ssh_disable_password=true to apply)
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PasswordAuthentication'
+        line: 'PasswordAuthentication no'
+        create: yes
+      when: ssh_disable_password | default(false) | bool
+
+    - name: Restart SSH service (Debian/Ubuntu)
+      ansible.builtin.service:
+        name: ssh
+        state: restarted
+      failed_when: false
+      changed_when: false
+
+    - name: Restart SSHD service (RHEL/others)
+      ansible.builtin.service:
+        name: sshd
+        state: restarted
+      failed_when: false
+      changed_when: false
+
+    - name: Wait for SSH to become available
+      ansible.builtin.wait_for:
+        host: "{{ ansible_host | default(inventory_hostname) }}"
+        port: 22
+        delay: 1
+        timeout: 30
+
+    - name: Test SSH connectivity
+      ansible.builtin.ping:
+
+
+- name: Bootstrap homelab swarm cluster
+  hosts: managers
+  become: true
+  roles:
+    - docker
+    - swarm

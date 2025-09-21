@@ -1,0 +1,23 @@
+---
+- name: Install NFS client packages
+  package:
+    name: nfs-common
+    state: present
+
+- name: Ensure mount points exist
+  file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  loop: "{{ nfs_mounts | default([]) }}"
+
+- name: Add fstab entries
+  mount:
+    src: "{{ item.src }}"
+    path: "{{ item.path }}"
+    fstype: nfs
+    opts: "{{ item.opts | default('defaults,_netdev') }}"
+    state: mounted
+  loop: "{{ nfs_mounts | default([]) }}"
