@@ -33,6 +33,19 @@ ansible-playbook -i ansible/inventories/homelab/hosts.yml ansible/storage.yml
 ansible -i ansible/inventories/homelab/hosts.yml managers -b -m shell -a 'mount | grep -E " nfs |:/srv/nfs/" || true'
 ```
 
+4. Validate eth1 interface configuration:
+
+```bash
+# Check eth1 interface setup locally
+make validate-eth1-nfs
+
+# Or run directly
+./scripts/validate-eth1-nfs.sh
+
+# Test with specific NFS server
+NFS_SERVER=10.87.10.101 ./scripts/validate-eth1-nfs.sh
+```
+
 ## Use in Swarm stacks
 
 Bind-mount the NFS-backed host path into services:
